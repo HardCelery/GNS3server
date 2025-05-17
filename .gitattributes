@@ -1,0 +1,11 @@
+# 自動で改行コードを統一（クロスOS対応）
+* text=auto
+
+# Unix系ファイルはLFに統一
+*.sh text eol=lf
+*.tf text eol=lf
+*.tfvars text eol=lf
+
+# 状態ファイルも念のためLFに
+*.tfstate text eol=lf
+*.tfstate.backup text eol=lf

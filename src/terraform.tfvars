@@ -1,0 +1,5 @@
+key_name     = "keypair01"
+vpc_id       = "vpc-07ce2a498a767f7f1"
+subnet_id    = "subnet-02104a67ad2048e7d"
+private_ip   = "172.31.0.5"
+allowed_cidr = "0.0.0.0/0"
