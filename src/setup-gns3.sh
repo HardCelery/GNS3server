@@ -1,62 +1,42 @@
 #!/bin/bash
-set -e
+
+set -eux
 
 # Update system
+export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get upgrade -y
 
 # Install necessary packages
-apt-get install -y python3-venv python3-pip qemu-system-x86 docker.io bridge-utils
+apt-get install -y ubuntu-desktop gnome-terminal xterm wireshark docker.io bridge-utils
 
 # Start Docker service
 systemctl enable docker
 systemctl start docker
 
-# Create GNS3 virtual environment
-python3 -m venv /home/ubuntu/.env
-source /home/ubuntu/.env/bin/activate
+# Install GNS3 GUI + server
+apt-get install -y gns3-gui
 
-# Install latest gns3-server
-pip install --upgrade pip
-pip install gns3-server
+# Allow non-root Wireshark usage
+chmod +x /usr/bin/dumpcap
+setcap cap_net_raw,cap_net_admin=eip /usr/bin/dumpcap
 
-# Create GNS3 config
-mkdir -p /home/ubuntu/.config/GNS3
-cat <<EOF > /home/ubuntu/.config/GNS3/gns3_server.conf
-[Server]
-host = 0.0.0.0
-port = 3080
-local = False
-auth = False
+# Create directories
+mkdir -p /home/ubuntu/GNS3/{projects,images,configs}
+chown -R ubuntu:ubuntu /home/ubuntu/GNS3
 
-[Qemu]
-qemu_path = /usr/bin/qemu-system-x86_64
+# Ensure graphical login
+systemctl set-default graphical.target
 
-[Docker]
-enable_docker = True
+# Optional: Add desktop shortcut
+sudo -u ubuntu mkdir -p /home/ubuntu/Desktop
+cat <<EOF > /home/ubuntu/Desktop/gns3.desktop
+[Desktop Entry]
+Name=GNS3
+Exec=gns3
+Icon=gns3
+Type=Application
+Categories=Network;
 EOF
-
-# Create systemd service
-cat <<EOF | sudo tee /etc/systemd/system/gns3server.service
-[Unit]
-Description=GNS3 Server with virtual environment
-After=network.target docker.service
-
-[Service]
-Type=simple
-User=ubuntu
-WorkingDirectory=/home/ubuntu
-ExecStart=/bin/bash -c 'source /home/ubuntu/.env/bin/activate && exec gns3server --config /home/ubuntu/.config/GNS3/gns3_server.conf'
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Fix permissions for GNS3 config directory
-chown -R ubuntu:ubuntu /home/ubuntu/.config/GNS3
-
-# Reload systemd and start service
-systemctl daemon-reload
-systemctl enable gns3server
-systemctl start gns3server
+chmod +x /home/ubuntu/Desktop/gns3.desktop
+chown ubuntu:ubuntu /home/ubuntu/Desktop/gns3.desktop
